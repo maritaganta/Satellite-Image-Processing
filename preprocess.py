@@ -2,7 +2,15 @@ import rasterio as rio
 import os
 from patchify import patchify
 import cv2
-#  arr_st = rio.open(path).read(bands).transpose((1, 2, 0))
+import glob
+import csv
+import tqdm
+from sklearn.model_selection import train_test_split
+import pandas as pd
+
+RANDOM_STATE = 42
+
+MASK_ALGORITHM = 'Kumar-Roy'  # TODO: Mask algorithms need to be defined and naming conventions must be followed
 
 ROOT_DIR = '../../FireDetectionProcesses/data'
 IMG_DIR = ROOT_DIR + "images/"
@@ -46,10 +54,39 @@ for path, subdir, files in os.walk(MASK_DIR):
                     cv2.imwrite(ROOT_DIR + "256_patches/images/"+mask_name +
                                 "patch_" + str(i) + str(j) + ".tif", single_patch_img)
 
-train_img_dir = '../../FireDetectionProcesses/data/256_patches/images/'
-train_mask_dir = '../../FireDetectionProcesses/data/256_patches/masks/'
+IMAGES_PATH = '../../FireDetectionProcesses/data/256_patches/images'
+MASKS_PATH = '../../FireDetectionProcesses/data/256_patches/masks'
+OUTPUT = '../../FireDetectionProcesses/data'
 
-img_list = os.listdir(train_img_dir)
-msk_list = os.listdir(train_mask_dir)
+IMAGES_DATAFRAME = os.path.join(OUTPUT, 'images_masks.csv')
 
-num_images = len(os.listdir(train_img_dir))
+TRAIN_RATIO = 0.6
+VALIDATION_RATIO = 0.1
+TEST_RATIO = 0.3
+
+masks = glob.glob(os.path.join(MASKS_PATH, '*{}*.tif'.format(MASK_ALGORITHM)))
+
+with open(IMAGES_DATAFRAME, 'w') as f:
+    writer = csv.writer(f, delimiter=',')
+
+    for mask in tqdm(masks):
+        _, mask_name = os.path.split(mask)
+
+        image_name = mask_name.replace('_{}_'.format(MASK_ALGORITHM), '_')
+        writer.writerow([image_name, mask_name])
+
+df = pd.read_csv(IMAGES_DATAFRAME, header=None, names=['images', 'masks'])
+images_df = df[['images']]
+masks_df = df[['masks']]
+
+x_train, x_test, y_train, y_test = train_test_split(images_df, masks_df,
+                                                    test_size=1 - TRAIN_RATIO, random_state=RANDOM_STATE)
+x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=TEST_RATIO/(TEST_RATIO + VALIDATION_RATIO),
+                                                random_state=RANDOM_STATE)
+
+x_train.to_csv(os.path.join(OUTPUT, 'images_train.csv'), index=False)
+y_train.to_csv(os.path.join(OUTPUT, 'masks_train.csv'), index=False)
+x_val.to_csv(os.path.join(OUTPUT, 'images_val.csv'), index=False)
+y_val.to_csv(os.path.join(OUTPUT, 'masks_val.csv'), index=False)
+x_test.to_csv(os.path.join(OUTPUT, 'images_test.csv'), index=False)
+y_test.to_csv(os.path.join(OUTPUT, 'masks_test.csv'), index=False)
