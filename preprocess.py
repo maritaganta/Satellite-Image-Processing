@@ -8,8 +8,6 @@ import tqdm
 from sklearn.model_selection import train_test_split
 import pandas as pd
 
-RANDOM_STATE = 42
-
 MASK_ALGORITHM = 'Kumar-Roy'  # TODO: Mask algorithms need to be defined and naming conventions must be followed
 
 ROOT_DIR = '../../FireDetectionProcesses/data'
@@ -18,6 +16,7 @@ MASK_DIR = ROOT_DIR + "masks/"
 
 PATCH_SIZE = 256
 BANDS: tuple = (8, 3, 2)
+
 
 for path, subdir, files in os.walk(IMG_DIR):
     dir_name = path.split(os.path.sep)[-1]
@@ -42,7 +41,7 @@ for path, subdir, files in os.walk(MASK_DIR):
     masks = os.listdir(path)
     for k, mask_name in enumerate(masks):
         if mask_name.endswith(".tif"):
-            mask = rio.open(path+"/"+mask_name).read()
+            mask = rio.open(path+"/"+mask_name).read().transpose((1, 2, 0))
             SIZE_X = mask.shape[0] // PATCH_SIZE * PATCH_SIZE
             SIZE_Y = mask.shape[1] // PATCH_SIZE * PATCH_SIZE
             mask = mask[:SIZE_X, :SIZE_Y, :]
@@ -79,10 +78,8 @@ df = pd.read_csv(IMAGES_DATAFRAME, header=None, names=['images', 'masks'])
 images_df = df[['images']]
 masks_df = df[['masks']]
 
-x_train, x_test, y_train, y_test = train_test_split(images_df, masks_df,
-                                                    test_size=1 - TRAIN_RATIO, random_state=RANDOM_STATE)
-x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=TEST_RATIO/(TEST_RATIO + VALIDATION_RATIO),
-                                                random_state=RANDOM_STATE)
+x_train, x_test, y_train, y_test = train_test_split(images_df, masks_df, test_size=1 - TRAIN_RATIO)
+x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=TEST_RATIO/(TEST_RATIO + VALIDATION_RATIO))
 
 x_train.to_csv(os.path.join(OUTPUT, 'images_train.csv'), index=False)
 y_train.to_csv(os.path.join(OUTPUT, 'masks_train.csv'), index=False)
