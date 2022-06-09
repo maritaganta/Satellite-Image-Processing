@@ -9,6 +9,37 @@ Remember that the files will need more space when you uncomprees it, so watch ou
 import gdown
 import os
 
+"""
+.
+└── C:\ Users \ marit_na7iraq/
+    └── FireDetectionProcesses/
+        └── dataset/
+            ├── compressed
+            └── images/
+                ├── patches
+                └── masks/
+                    ├── patches
+                    ├── intersection
+                    └── voting
+.
+└── train/
+    ├── intersection
+    ├── kumar-roy/
+    │   ├── unet 1
+    │   ├── unet 2
+    │   └── unet 3/
+    │       ├── dataset
+    │       ├── evaluate.py
+    │       ├── generator.py
+    │       ├── inference.py
+    │       ├── metrics.py
+    │       ├── models.py
+    │       ├── plot_history.py
+    │       └── train.py
+    ├── murphy
+    ├── schroeder
+    └── voting
+"""
 # Set to false if you want to download the subset of samples
 DOWNLOAD_FULL_DATASET = True
 
